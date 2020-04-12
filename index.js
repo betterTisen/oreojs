@@ -3,5 +3,7 @@ import Oreojs from "./src"
 
 new Oreojs(`
 const a=2,b=a
+{
   console.log(b)
+}
 `).run()

@@ -8,8 +8,8 @@
  */
 
 import { Parser } from "acorn"
-import NodeIterator from "./iterator"
-import Scope from "./scope"
+import NodeIterator from "./util/iterator"
+import Scope from "./util/scope"
 
 class Oreojs {
   constructor(code = "") {

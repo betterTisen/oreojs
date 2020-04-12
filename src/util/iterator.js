@@ -4,7 +4,7 @@
  *
  */
 
-import NodeHandler from "./util/es_handle"
+import NodeHandler from "../es_handle"
 
 class NodeIterator {
   constructor(node, scope) {

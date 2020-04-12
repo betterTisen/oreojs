@@ -8,9 +8,9 @@
  * 此外，新建Scope实例也会保存其父级作用域。
  */
 
-import globalMap from "./store/globalMap"
+import globalMap from "../store/globalMap"
 
-import SimpleValue from "./util/simpleValue" // 用于创建变量
+import SimpleValue from "./simpleValue" // 用于创建变量
 
 class Scope {
   constructor(parentScope) {
