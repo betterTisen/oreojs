@@ -34,7 +34,7 @@ const NodeHandler = {
     return obj[name]
   },
 
-  // 标识符
+  // 标识符(用于读取值)
   Identifier(nodeIterator) {
     const { name } = nodeIterator.node
 
@@ -75,8 +75,46 @@ const NodeHandler = {
   BlockStatement(nodeIterator) {
     const scope = nodeIterator.createScope()
     for (const e of nodeIterator.node.body) {
+      // 判断 Return 关键字
+      if (NodeHandler.isReturnStatement(e.type)) {
+        const arg = nodeIterator.traverse(e.argument, { scope })
+        return arg
+      }
+
       nodeIterator.traverse(e, { scope })
     }
+  },
+
+  // 函数定义节点处理器
+  FunctionDeclaration(nodeIterator) {
+    const name = nodeIterator.node.id.name
+    const fn = NodeHandler.FunctionExpression(nodeIterator)
+    nodeIterator.scope.declare(name, fn, "let")
+  },
+
+  // 函数表达式节点处理器
+  FunctionExpression(nodeIterator) {
+    const { params, body } = nodeIterator.node
+
+    const fn = function () {
+      const scope = new nodeIterator.createScope()
+      scope.declare("this", this, "const")
+      scope.declare("arguments", arguments, "const")
+
+      // 函数变量赋值
+      params.forEach((param, i) => {
+        scope.declare(param.name, arguments[i], "let")
+      })
+
+      // 解析 BlockStatement
+      return nodeIterator.traverse(body, { scope })
+    }
+    return fn
+  },
+
+  // return
+  isReturnStatement(type) {
+    return type === "ReturnStatement" ? true : false
   },
 }
 
