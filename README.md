@@ -20,6 +20,17 @@ new Oreojs(`
 `).run()
 ```
 
+## Features
+
+- [x] variable scope -- finished
+- [x] variable handle -- finished
+- [x] function handle -- finished
+- [] for handle
+- [] while handle
+- [] if handle
+- [] switch handle
+- [] keywords Return / Break / Continue
+
 ## License
 
 MIT
