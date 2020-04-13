@@ -26,8 +26,8 @@ class NodeIterator {
     return new Scope(this.scope)
   }
 
-  traverse(node) {
-    const scope = this.scope
+  traverse(node, opt = {}) {
+    const scope = opt.scope ? opt.scope : this.scope
     const _evel = this.nodeHandler[node.type]
     const nodeIterator = new NodeIterator(node, scope)
     if (!_evel) {

@@ -70,6 +70,14 @@ const NodeHandler = {
       nodeIterator.scope.set(name, value)
     }
   },
+
+  // 块级作用域
+  BlockStatement(nodeIterator) {
+    const scope = nodeIterator.createScope()
+    for (const e of nodeIterator.node.body) {
+      nodeIterator.traverse(e, { scope })
+    }
+  },
 }
 
 export default NodeHandler
