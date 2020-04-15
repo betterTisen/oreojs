@@ -4,7 +4,8 @@
  */
 
 class SimpleValue {
-  constructor(value, kind = "") {
+  constructor(name, value, kind = "") {
+    this.name = name
     this.value = value
     this.kind = kind
   }
@@ -12,7 +13,7 @@ class SimpleValue {
   set(value) {
     // 禁止重新对const类型变量赋值
     if (this.kind === "const") {
-      throw new TypeError("Assignment to constant variable")
+      throw new Error(`"${this.name}" is read-only`)
     } else {
       this.value = value
     }

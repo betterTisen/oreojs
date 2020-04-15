@@ -7,8 +7,8 @@
 import SimpleValue from "../util/simpleValue"
 
 const globalMap = {
-  window: new SimpleValue(window),
-  console: new SimpleValue(console),
+  window: new SimpleValue("window", window),
+  console: new SimpleValue("console", console),
 }
 
 export default globalMap

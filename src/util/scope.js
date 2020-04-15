@@ -66,7 +66,7 @@ class Scope {
     if (this.declaration[name]) {
       throw new SyntaxError(`Identifier ${name} has already been declared`)
     }
-    this.declaration[name] = new SimpleValue(value, "let")
+    this.declaration[name] = new SimpleValue(name, value, "let")
     return this.declaration[name]
   }
 
@@ -75,7 +75,7 @@ class Scope {
     if (this.declaration[name]) {
       throw new SyntaxError(`Identifier ${name} has already been declared`)
     }
-    this.declaration[name] = new SimpleValue(value, "const")
+    this.declaration[name] = new SimpleValue(name, value, "const")
     return this.declaration[name]
   }
 }
