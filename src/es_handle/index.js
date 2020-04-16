@@ -65,9 +65,10 @@ const NodeHandler = {
   AssignmentExpression(nodeIterator) {
     const { operator, left, right } = nodeIterator.node
     const { name } = left
-    const { value } = right
+    const value = right.value ? right.value : nodeIterator.traverse(right)
     if (operator === "=") {
       nodeIterator.scope.set(name, value)
+      return value
     }
   },
 
@@ -77,17 +78,29 @@ const NodeHandler = {
     for (const e of nodeIterator.node.body) {
       // 判断 Return 关键字
       if (NodeHandler.isReturnStatement(e.type)) {
-        const arg = nodeIterator.traverse(e.argument, { scope })
-        return arg
+        const arg = e.argument ? nodeIterator.traverse(e.argument, { scope }) : undefined
+        return { type: "isReturn", value: arg }
+      } else if (NodeHandler.isBreakStatement(e.type)) {
+        return { type: "isBreak" }
+      } else if (NodeHandler.isContinueStatement(e.type)) {
+        return { type: "isContinue" }
+      }
+      const signal = nodeIterator.traverse(e, { scope })
+
+      if (!signal) {
+        continue
       }
 
-      nodeIterator.traverse(e, { scope })
+      // 处理关键字
+      if (signal.type === "isReturn") {
+        return signal
+      }
     }
   },
 
   // 函数定义节点处理器
   FunctionDeclaration(nodeIterator) {
-    const name = nodeIterator.node.id.name
+    const { name } = nodeIterator.node.id
     const fn = NodeHandler.FunctionExpression(nodeIterator)
     nodeIterator.scope.declare(name, fn, "let")
   },
@@ -97,7 +110,7 @@ const NodeHandler = {
     const { params, body } = nodeIterator.node
 
     const fn = function () {
-      const scope = new nodeIterator.createScope()
+      const scope = nodeIterator.createScope()
       scope.declare("this", this, "const")
       scope.declare("arguments", arguments, "const")
 
@@ -107,15 +120,120 @@ const NodeHandler = {
       })
 
       // 解析 BlockStatement
-      return nodeIterator.traverse(body, { scope })
+      const signal = nodeIterator.traverse(body, { scope })
+
+      if (signal.type === "isReturn") {
+        return signal.value
+      }
     }
+
     return fn
   },
 
-  // return
+  UpdateExpression(nodeIterator) {
+    const { operator, prefix } = nodeIterator.node
+    const { name } = nodeIterator.node.argument
+    let val = nodeIterator.scope.get(name).value
+
+    operator === "++" ? nodeIterator.scope.set(name, val + 1) : nodeIterator.scope.set(name, val - 1)
+
+    if (operator === "++" && prefix) {
+      return ++val
+    } else if (operator === "++" && !prefix) {
+      return val++
+    } else if (operator === "--" && prefix) {
+      return --val
+    } else {
+      return val--
+    }
+  },
+
+  // 二元运算符
+  BinaryOperatorMap: {
+    "==": (l, r) => l == r,
+    "!=": (l, r) => l != r,
+    "===": (l, r) => l === r,
+    "!==": (l, r) => l !== r,
+    "<": (l, r) => l < r,
+    "<=": (l, r) => l <= r,
+    ">": (l, r) => l > r,
+    ">=": (l, r) => l >= r,
+    "<<": (l, r) => l << r,
+    ">>": (l, r) => l >> r,
+    ">>>": (l, r) => l >>> r,
+    "+": (l, r) => l + r,
+    "-": (l, r) => l - r,
+    "*": (l, r) => l * r,
+    "/": (l, r) => l / r,
+    "%": (l, r) => l % r,
+    "|": (l, r) => l | r,
+    "^": (l, r) => l ^ r,
+    "&": (l, r) => l & r,
+    in: (l, r) => l in r,
+    instanceof: (l, r) => l instanceof r,
+  },
+
+  // 二元运算表达式节点
+  BinaryExpression(nodeIterator) {
+    const { left, right, operator } = nodeIterator.node
+    const l = nodeIterator.traverse(left)
+    const r = nodeIterator.traverse(right)
+    return NodeHandler.BinaryOperatorMap[operator](l, r)
+  },
+
+  // if 节点处理
+  IfStatement(nodeIterator) {
+    const { test, consequent, alternate } = nodeIterator.node
+    const condition = nodeIterator.traverse(test)
+    if (condition) {
+      return nodeIterator.traverse(consequent)
+    } else if (alternate) {
+      return nodeIterator.traverse(alternate)
+    }
+  },
+
+  // for 节点处理
+  ForStatement(nodeIterator) {
+    const { init, test, update, body } = nodeIterator.node
+    const scope = nodeIterator.createScope()
+    for (nodeIterator.traverse(init, { scope }); nodeIterator.traverse(test, { scope }); nodeIterator.traverse(update, { scope })) {
+      const signal = nodeIterator.traverse(body, { scope })
+      if (!signal) {
+        continue
+      }
+
+      if (signal.type === "isBreak") {
+        break
+      } else if (signal.type === "isContinue") {
+        continue
+      } else if (signal.type === "isReturn") {
+        return signal
+      }
+    }
+  },
+
+  // keyword this
+  ThisExpression(nodeIterator) {
+    return nodeIterator.scope.get("this").value
+  },
+
+  // keyword new
+  NewExpression(nodeIterator) {},
+
+  // keyword return
   isReturnStatement(type) {
     return type === "ReturnStatement" ? true : false
   },
+  // keyword break
+  isBreakStatement(type) {
+    return type === "BreakStatement" ? true : false
+  },
+  // keyword continue
+  isContinueStatement(type) {
+    return type === "ContinueStatement" ? true : false
+  },
 }
 
-export default NodeHandler
+// 这里使用 commonjs 的写法，this注入全局变量 window
+// 若使用 es module，this 会指向 undefined
+module.exports = NodeHandler
