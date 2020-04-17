@@ -61,13 +61,23 @@ const NodeHandler = {
     }
   },
 
+  getMemberExpressionValue(node, nodeIterator) {
+    const obj = nodeIterator.traverse(node.object) //这里的obj即是this指向的对象
+    const name = node.property.name
+    return {
+      obj,
+      name,
+    }
+  },
+
   // 赋值表达式节点，operator 属性表示一个赋值运算符，left 和 right 是赋值运算符左右的表达式。
   AssignmentExpression(nodeIterator) {
     const { operator, left, right } = nodeIterator.node
-    const { name } = left
+    const n = left.name ? left.name : NodeHandler.getMemberExpressionValue(left, nodeIterator)
     const value = right.value ? right.value : nodeIterator.traverse(right)
+
     if (operator === "=") {
-      nodeIterator.scope.set(name, value)
+      n instanceof Object ? (n.obj[n.name] = value) : nodeIterator.scope.set(n, value)
       return value
     }
   },
@@ -122,6 +132,9 @@ const NodeHandler = {
       // 解析 BlockStatement
       const signal = nodeIterator.traverse(body, { scope })
 
+      if (!signal) {
+        return
+      }
       if (signal.type === "isReturn") {
         return signal.value
       }
@@ -214,11 +227,17 @@ const NodeHandler = {
 
   // keyword this
   ThisExpression(nodeIterator) {
-    return nodeIterator.scope.get("this").value
+    return nodeIterator.scope.get("this") ? nodeIterator.scope.get("this").value : null
   },
 
   // keyword new
-  NewExpression(nodeIterator) {},
+  NewExpression(nodeIterator) {
+    const { callee } = nodeIterator.node
+    const argsMap = nodeIterator.node.arguments
+    const fn = nodeIterator.traverse(callee)
+    const args = argsMap.map((arg) => nodeIterator.traverse(arg))
+    return new fn(...args)
+  },
 
   // keyword return
   isReturnStatement(type) {
