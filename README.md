@@ -25,11 +25,11 @@ new Oreojs(`
 - [x] variable scope -- finished
 - [x] variable handle -- finished
 - [x] function handle -- finished
-- [ ] for handle
+- [x] for handle
 - [ ] while handle
-- [ ] if handle
+- [x] if handle
 - [ ] switch handle
-- [ ] keywords Return / Break / Continue
+- [x] keywords Return / Break / Continue
 
 ## License
 
